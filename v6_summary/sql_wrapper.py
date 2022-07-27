@@ -1,8 +1,8 @@
 import os
 
-from v6_summary_rdb.constants import *
-from v6_summary_rdb.utils import run_sql, compare_with_minimum, parse_sql_condition
-from v6_summary_rdb.sql_functions import cohort_count
+from v6_summary.constants import *
+from v6_summary.utils import run_sql, compare_with_minimum, parse_sql_condition
+from v6_summary.sql_functions import cohort_count
 
 def table_count(table, column, sql_condition, db_client):
     """ Retireve the number of records in a table

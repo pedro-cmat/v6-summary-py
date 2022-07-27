@@ -17,15 +17,13 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='v6-summary-rdb',
     version="1.0.0",
-    description='vantage6 summary for relational databases',
+    description='vantage6 summary for a file base database',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/pedro-cmat/v6-summary-rdb',
+    url='https://github.com/pedro-cmat/v6-summary',
     packages=find_packages(),
     python_requires='>=3.6',
-    install_requires=[
-        'psycopg2'
-    ]
+    install_requires=[]
     # ,
     # extras_require={
     # },

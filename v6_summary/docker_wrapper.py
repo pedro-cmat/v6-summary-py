@@ -17,7 +17,7 @@ from vantage6.tools.data_format import DataFormat
 from vantage6.tools.exceptions import DeserializationException
 from typing import BinaryIO
 
-from v6_summary_rdb.constants import ERROR
+from v6_summary.constants import ERROR
 
 # from sshtunnel import SSHTunnelForwarder
 

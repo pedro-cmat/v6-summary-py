@@ -2,11 +2,11 @@ import time
 
 from vantage6.tools.util import warn, info
 
-from v6_summary_rdb.aggregators import cohort_aggregator
-from v6_summary_rdb.constants import *
-from v6_summary_rdb.mapping import AGGREGATORS, FUNCTION_MAPPING
-from v6_summary_rdb.sql_wrapper import cohort_finder, summary_results
-from v6_summary_rdb.utils import *
+from v6_summary.aggregators import cohort_aggregator
+from v6_summary.constants import *
+from v6_summary.mapping import AGGREGATORS, FUNCTION_MAPPING
+from v6_summary.sql_wrapper import cohort_finder, summary_results
+from v6_summary.utils import *
 
 def master(client, db_client, columns = [], functions = None, cohort = None, org_ids = None):
     """

@@ -1,6 +1,6 @@
-from v6_summary_rdb.aggregators import *
-from v6_summary_rdb.constants import *
-from v6_summary_rdb.sql_functions import *
+from v6_summary.aggregators import *
+from v6_summary.constants import *
+from v6_summary.sql_functions import *
 
 AGGREGATORS = {
     MAX_FUNCTION: maximum,

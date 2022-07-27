@@ -1,7 +1,7 @@
 import os
 
-from v6_summary_rdb.constants import *
-from v6_summary_rdb.utils import parse_sql_condition
+from v6_summary.constants import *
+from v6_summary.utils import parse_sql_condition
 
 def histogram(variable, table, sql_condition, arguments):
     """ Create the SQL statement to obtain the necessary information

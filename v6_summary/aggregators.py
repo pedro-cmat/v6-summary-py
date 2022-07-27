@@ -1,8 +1,8 @@
 import math
 import os
 
-from v6_summary_rdb.constants import *
-from v6_summary_rdb.utils import compare_with_minimum
+from v6_summary.constants import *
+from v6_summary.utils import compare_with_minimum
 
 def count(results):
     """ Calculates the global count.

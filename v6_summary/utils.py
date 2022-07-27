@@ -2,7 +2,7 @@
 """
 import os
 
-from v6_summary_rdb.constants import *
+from v6_summary.constants import *
 
 def run_sql(db_client, sql_statement, parameters=None, fetch_all=False):
     """ Execute the sql query and retrieve the results

@@ -68,7 +68,7 @@ input_ = {
 # Send the task to the central server
 task = client.post_task(
     name="summary",
-    image="pmateus/v6-summary-rdb:1.2.0",
+    image="pmateus/v6-summary:1.2.0",
     collaboration_id=1,
     input_= input_,
     organization_ids=[2]
