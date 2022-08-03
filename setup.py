@@ -23,7 +23,10 @@ setup(
     url='https://github.com/pedro-cmat/v6-summary',
     packages=find_packages(),
     python_requires='>=3.6',
-    install_requires=[]
+    install_requires=[
+        'pandas==1.2.1',
+        #'pandasql==0.7.3',
+    ]
     # ,
     # extras_require={
     # },

@@ -8,7 +8,7 @@ from v6_summary.mapping import AGGREGATORS, FUNCTION_MAPPING
 from v6_summary.sql_wrapper import cohort_finder, summary_results
 from v6_summary.utils import *
 
-def master(client, db_client, columns = [], functions = None, cohort = None, org_ids = None):
+def master(client, data, columns = [], functions = None, cohort = None, org_ids = None):
     """
     Master algorithm to compute a summary of the federated datasets.
 
@@ -16,8 +16,8 @@ def master(client, db_client, columns = [], functions = None, cohort = None, org
     ----------
     client : ContainerClient
         Interface to the central server. This is supplied by the wrapper.
-    db_client : DBClient
-        The database client.
+    data : Database
+        The database as a pandas dataframe.
     columns : List
         List containing the columns and information needed.
     cohort: Dict
@@ -93,7 +93,7 @@ def master(client, db_client, columns = [], functions = None, cohort = None, org
     while not task.get("complete"):
         task = client.request(f"task/{task_id}")
         info("Waiting for results")
-        time.sleep(5)
+        time.sleep(10)
 
     info("Obtaining results")
     results = client.get_results(task_id=task.get("id"))
@@ -129,7 +129,7 @@ def master(client, db_client, columns = [], functions = None, cohort = None, org
 
     return summary
 
-def RPC_summary(db_client, columns, cohort):
+def RPC_summary(data, columns, cohort):
     """
     Computes a summary of the requested columns
 
@@ -151,16 +151,17 @@ def RPC_summary(db_client, columns, cohort):
     # Execute the necessary SQL queries and aggregate the results
     summary = {}
     # Process the cohort if included in the request
-    sql_condition = None
+    cohort_data = data
+    summary[COHORT] = False
     if cohort:
         try:
-            (summary[COHORT], sql_condition) = cohort_finder(cohort, db_client)
+            (summary[COHORT], cohort_data) = cohort_finder(cohort, data)
         except Exception as error:
             return parse_error(f"Error while executing the sql query for the cohort analysis {str(error)}")
 
-    if not cohort or sql_condition:
+    if not cohort or summary[COHORT]:
         try:
-            summary.update(summary_results(columns, sql_condition, db_client))
+            summary.update(summary_results(cohort_data, columns))
         except Exception as error:
             return parse_error(f"Error while executing the sql query for the summary: {str(error)}")
 
