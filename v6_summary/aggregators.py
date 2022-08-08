@@ -105,3 +105,9 @@ def cohort_aggregator(results):
         # count[result[0]] = result[1]
         count.append(result)
     return count
+
+def describe_aggregator(results):
+    """ Aggregate the description for the variables available
+        at each cohort.
+    """
+    return [result[DESCRIBE] for result in results]

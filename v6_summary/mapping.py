@@ -12,6 +12,7 @@ AGGREGATORS = {
     COUNT_FUNCTION: count,
     COUNT_NULL: sum_null,
     COUNT_DISCRETE: count_discrete,
+    DESCRIBE: describe_aggregator,
 }
 
 FUNCTION_MAPPING = {
@@ -64,5 +65,11 @@ FUNCTION_MAPPING = {
             CALL: count_discrete_values,
             FETCH: FETCH_ALL
         }
+    },
+    DESCRIBE: {
+        METHOD: {
+            NAME: DESCRIBE,
+            CALL: describe,
+        },
     }
 }

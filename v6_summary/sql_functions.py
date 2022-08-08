@@ -79,3 +79,12 @@ def cohort_count(data, definition):
             value = float(value)
         df_condition = (True if df_condition is None else df_condition) & [operator](data[component[VARIABLE]], value)
     return data[df_condition]
+
+def describe(data, variable, arguments):
+    """ Describe the variables available,
+    """
+    description_allowed = arguments.get(DESCRIPTION_ALLOWED) or True
+    variables = []
+    if description_allowed:
+        variables = list(data.columns)
+    return variables
