@@ -8,7 +8,7 @@ import os
 import pickle
 import time
 
-import psycopg2
+import pandas as pd
 
 from vantage6.tools.dispatch_rpc import dispact_rpc
 from vantage6.tools.util import info, warn
@@ -71,7 +71,7 @@ def docker_wrapper(module: str):
     output_file = os.environ["OUTPUT_FILE"]
     output_format = input_data.get('output_format', None)
 
-    db_client = None
+    data = None
     token = None
     if input_data.get("master"):
         # Usually only used by the master method. But can be used
@@ -81,33 +81,15 @@ def docker_wrapper(module: str):
         with open(token_file) as fp:
             token = fp.read().strip()
     else:
+        database_uri = os.environ["DATABASE_URI"]
+        info(f"Using '{database_uri}' as database")
+        data = pd.read_csv(database_uri)
         # Get the database client
         # In this case, the master doesn't need to access the database
-        info(f"Connecting to {os.getenv('PGDATABASE')}")
-        try:
-            connection = psycopg2.connect("postgresql://")
-            db_client = connection.cursor()
-            info("Successfully connected to the database")       
-        except Exception as error:
-            info(str(error))
-            write_output(
-                output_format,
-                {
-                    ERROR: f"DB connection error: {str(error)}",
-                },
-                output_file
-            )
-            return None
 
     # make the actual call to the method/function
     info("Dispatching ...")
-    output = dispact_rpc(db_client, input_data, module, token)
-
-    # Disconnecting from the database
-    if db_client:
-        info("Disconnecting from the database")
-        db_client.close()
-        connection.close()
+    output = dispact_rpc(data, input_data, module, token)
 
     # write output from the method to mounted output file. Which will be
     # transfered back to the server by the node-instance.

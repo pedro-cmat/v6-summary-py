@@ -1,33 +1,33 @@
 import os
 
 from v6_summary.constants import *
-from v6_summary.utils import run_sql, compare_with_minimum, parse_sql_condition
+from v6_summary.utils import compare_with_minimum
 from v6_summary.sql_functions import cohort_count
 
-def table_count(table, column, sql_condition, db_client):
-    """ Retireve the number of records in a table
-    """
-    sql_statement = f"""SELECT current_database(), COUNT("{column}") FROM {table} 
-        WHERE "{column}" IS NOT NULL {parse_sql_condition(sql_condition)};"""
-    result = run_sql(db_client, sql_statement)
-    return result
+PD_SUMMARY_MAP = {
+    COUNT_FUNCTION: 0,
+    AVG_FUNCTION: 1,
+    STD_SAMP_FUNCTION: 2,
+    MIN_FUNCTION: 3,
+    '1q': 4,
+    '2q': 5,
+    '3q': 6,
+    MAX_FUNCTION: 7,
+}
 
-def cohort_finder(cohort, db_client):
+def cohort_finder(cohort, data):
     """ Retrieve the results for the cohort finder option
     """
-    id_column = ID_COLUMN in cohort and cohort[ID_COLUMN]
-    sql_statement, sql_condition = cohort_count(
-        id_column,
-        cohort[COHORT_DEFINITION],
-        cohort[TABLE],
-    )
     # Check if the number of records in the table is enough
-    count = table_count(cohort[TABLE], id_column, sql_condition, db_client)
+    count = len(data)
+    # If the total count for the cohort is below the accepted threshold
+    # then the information won't be sent to the mater node
     if int(count[1]) >= int(os.getenv(TABLE_MINIMUM) or TABLE_MINIMUM_DEFAULT):
-        # If the total count for the cohort is below the accepted threshold
-        # then the information won't be sent to the mater node
-        result = run_sql(db_client, sql_statement)
-        return ((result[0], compare_with_minimum(result[1])), sql_condition)
+        cohort_data = cohort_count(
+            data,
+            cohort[COHORT_DEFINITION],
+        )
+        return (compare_with_minimum(len(cohort_data)), cohort_data)
     else:
         return (
             {
@@ -36,41 +36,31 @@ def cohort_finder(cohort, db_client):
             None
         )
 
-def summary_results(columns, sql_condition, db_client):
+def summary_results(data, columns):
     """ Retrieve the summary results for the requested functions
     """
     summary = {}
-    sql_functions = None
+    #sql_functions = None
     for column in columns:
         # validate the number of records available prior to obtaining any
         # summary statistics
-        variable = f'"{column[VARIABLE]}"'
-        table = column[TABLE].upper()
-        result = table_count(table, column[VARIABLE], sql_condition, db_client)
+        n_records = data[column[VARIABLE]].notnull().sum()
         summary[column[VARIABLE]] = {}
-        if int(result[1]) >= int(os.getenv(TABLE_MINIMUM) or TABLE_MINIMUM_DEFAULT):
-            if REQUIRED_FUNCTIONS in column:
-                # construct the sql statement
-                sql_functions = ""
-                for function in column[REQUIRED_FUNCTIONS]:
-                    if function.upper() not in sql_functions:
-                        sql_functions += f"{' ,' if sql_functions else ''}{function.upper()}({variable})"
-                sql_statement = f"""SELECT {sql_functions} FROM {table} WHERE 
-                    {variable} IS NOT NULL {parse_sql_condition(sql_condition)};"""
-                # execute the sql query and retrieve the results
-                result = run_sql(db_client, sql_statement)
+        if n_records >= int(os.getenv(TABLE_MINIMUM) or TABLE_MINIMUM_DEFAULT):
+            if REQUIRED_FUNCTIONS in column and len(column[REQUIRED_FUNCTIONS]) > 0:
+                result = data[column[VARIABLE]].describe()
                 # parse the results
                 for i, function in enumerate(column[REQUIRED_FUNCTIONS]):
-                    summary[column[VARIABLE]][function] = result[i]
+                    summary[column[VARIABLE]][function] = result[PD_SUMMARY_MAP[function]]
 
-            if REQUIRED_METHODS in column:
+            if REQUIRED_METHODS in column and len(column[REQUIRED_METHODS]) > 0:
                 for method in column[REQUIRED_METHODS]:
-                    sql_statement = method[CALL](
-                        column[VARIABLE], column[TABLE].upper(), sql_condition, column)
-                    summary[column[VARIABLE]][method[NAME]] = run_sql(
-                        db_client, sql_statement, fetch_all = method[FETCH]==FETCH_ALL
-                    )
+                    summary[column[VARIABLE]][method[NAME]] = method[CALL](
+                        data, column[VARIABLE], column)
+                    #summary[column[VARIABLE]][method[NAME]] = run_sql(
+                    #    db_client, sql_statement, fetch_all = method[FETCH]==FETCH_ALL
+                    #)
         else:
-           summary[column[VARIABLE]][WARNING] = f"Not enough records in database {result[0]}" + \
+           summary[column[VARIABLE]][WARNING] = f"Not enough records in database {n_records}" + \
                " to execute the summary statistics." 
     return summary

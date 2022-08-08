@@ -4,15 +4,6 @@ import os
 
 from v6_summary.constants import *
 
-def run_sql(db_client, sql_statement, parameters=None, fetch_all=False):
-    """ Execute the sql query and retrieve the results
-    """
-    db_client.execute(sql_statement, parameters)
-    if fetch_all:
-        return db_client.fetchall()
-    else:
-        return db_client.fetchone()
-
 def parse_error(error_message):
     """ Parse an error message.
     """
@@ -30,9 +21,3 @@ def compare_with_minimum(value):
     """
     count_minimum = int(os.getenv(COUNT_MINIMUM) or COUNT_MINIMUM_DEFAULT)
     return value if value > count_minimum else f"< {count_minimum}"
-
-def parse_sql_condition(sql_condition, where_condition=False):
-    """ Parse the sql condition to insert in another sql statement.
-    """
-    return f"""{"WHERE" if where_condition else "AND"} {sql_condition}""" \
-        if sql_condition else ""

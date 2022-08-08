@@ -1,9 +1,24 @@
+from operator import le, lt, ge, gt, eq
 import os
 
-from v6_summary.constants import *
-from v6_summary.utils import parse_sql_condition
+import numpy as np
 
-def histogram(variable, table, sql_condition, arguments):
+from v6_summary.constants import *
+
+validation_functions = {
+    '>=': ge,
+    '<=': le,
+    '>': gt,
+    '<': lt,
+    '=': eq,
+}
+
+def sum_values(data, variable, arguments):
+    """ Sum all the values for a variable
+    """
+    return data[variable].sum()
+
+def histogram(data, variable, arguments):
     """ Create the SQL statement to obtain the necessary information
         for an histogram.
     """
@@ -15,50 +30,52 @@ def histogram(variable, table, sql_condition, arguments):
     else:
         raise Exception("Histogram requested but the bin width (argument: BIN_WIDTH) must be provided!")
 
-    return f"""SELECT floor("{variable}"/{width})*{width} as bins, COUNT(*) 
-        FROM {table} {parse_sql_condition(sql_condition, where_condition=True)} GROUP BY 1 ORDER BY 1;"""
+    description = data[variable].describe()
+    min_bin = width * ((description[3])//width)
+    max_bin = width * (((description[7])//width) + 1)
+    bins = np.linspace(min_bin, max_bin, int(1 + ((max_bin - min_bin) // width)))
+    hist =  np.histogram(data[variable], bins)
+    return [[hist[1][i], hist[0][i]] for i in range(len(hist[1]) - 1)]
 
-def quartiles(variable, table, sql_condition, arguments):
+def quartiles(data, variable, arguments):
     """ Create the SQL statement to obtain the 25th, 50th, and 75th 
         quartiles for a variable.
     """
-    iqr_threshold = arguments.get(IQR_THRESHOLD) or IQR_THRESHOLD_DEFAULT
-    return f"""with percentiles AS (SELECT current_database() as db,
-        percentile_cont(0.25) within group (order by "{variable}" asc) as q1,
-        percentile_cont(0.50) within group (order by "{variable}" asc) as q2,
-        percentile_cont(0.75) within group (order by "{variable}" asc) as q3
-        FROM {table} {parse_sql_condition(sql_condition, where_condition=True)})
-        SELECT *, q1 - (q3 - q1) * {iqr_threshold} AS lower_bound,
-        q3 + (q3 - q1) * {iqr_threshold} AS upper_bound,
-        (SELECT count("{variable}") FROM {table} WHERE 
-            "{variable}" < q1 - (q3 - q1) * {iqr_threshold} 
-            {parse_sql_condition(sql_condition)}) AS lower_outliers,
-        (SELECT count("{variable}") FROM {table} WHERE 
-            "{variable}" > q3 + (q3 - q1) * {iqr_threshold} 
-            {parse_sql_condition(sql_condition)}) AS upper_outliers
-        FROM percentiles;
-    """
+    iqr_threshold = float(arguments.get(IQR_THRESHOLD) or IQR_THRESHOLD_DEFAULT)
+    q1 = data[variable].quantile(0.25)
+    q2 = data[variable].quantile(0.5)
+    q3 = data[variable].quantile(0.75)
+    lower_bound = q1 - ((q3 - q1) * iqr_threshold)
+    upper_bound = q3 + ((q3 - q1) * iqr_threshold)
 
-def count_null(variable, table, sql_condition, arguments):
+    return [
+        q1,
+        q2,
+        q3,
+        lower_bound,
+        upper_bound,
+        len(data[data[variable] < lower_bound]),
+        len(data[data[variable] > upper_bound]),
+    ]
+
+def count_null(data, variable, arguments):
     """ Create the SQL statment to count the null values.
     """
-    return f"""SELECT count("{variable}") FROM {table} WHERE "{variable}" IS NULL
-        {parse_sql_condition(sql_condition)};"""
+    return int(data[variable].isnull().sum())
 
-def count_discrete_values(variable, table, sql_condition, arguments):
+def count_discrete_values(data, variable, arguments):
     """ Count the discrete values.
     """
-    return f"""SELECT "{variable}", count(*) FROM {table} 
-        {parse_sql_condition(sql_condition, where_condition=True)} GROUP BY "{variable}";"""
+    return dict(data[variable].value_counts())
 
-def cohort_count(id_column, definition, table):
+def cohort_count(data, definition):
     """ Count the number of persons in a possible cohort.
     """
-    sql_condition = ''
+    df_condition = None
     for component in definition:
-        sql_condition += f' AND' if sql_condition else ''
-        sql_condition += f' "{component[VARIABLE]}" {component[OPERATOR]} {component[VALUE]}'
-    return (f"""SELECT current_database() as db, COUNT("{id_column or "*"}") 
-        FROM {table} WHERE {sql_condition}""",
-        sql_condition,
-    )
+        operator = validation_functions[OPERATOR]
+        value = component[VALUE]
+        if operator != '=':
+            value = float(value)
+        df_condition = (True if df_condition is None else df_condition) & [operator](data[component[VARIABLE]], value)
+    return data[df_condition]

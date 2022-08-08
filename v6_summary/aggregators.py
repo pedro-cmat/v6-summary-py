@@ -55,36 +55,39 @@ def boxplot(results):
     """ Aggregate the quartiles by node providing the information to
         build a boxplot.
     """
-    aggregated_quartiles = {}
+    # aggregated_quartiles = {}
+    aggregated_quartiles = []
     for result in results:
         quartiles = result[QUARTILES]
-        aggregated_quartiles[quartiles[0]] = {
+        # aggregated_quartiles[quartiles[0]] = {
+        aggregated_quartiles.append({
             MIN_FUNCTION: result[MIN_FUNCTION],
-            "q1": quartiles[1],
-            "median": quartiles[2],
-            "q3": quartiles[3],
-            "lower_bound": quartiles[4],
-            "upper_bound": quartiles[5],
-            "lower_outliers": compare_with_minimum(quartiles[6]),
-            "upper_outliers": compare_with_minimum(quartiles[7]),
+            "q1": quartiles[0],
+            "median": quartiles[1],
+            "q3": quartiles[2],
+            "lower_bound": quartiles[3],
+            "upper_bound": quartiles[4],
+            "lower_outliers": compare_with_minimum(quartiles[5]),
+            "upper_outliers": compare_with_minimum(quartiles[6]),
             MAX_FUNCTION: result[MAX_FUNCTION]
-        }
+        })
     return aggregated_quartiles
 
 def sum_null(results):
     """ Calculate the total number of null values.
     """
-    return sum([result[COUNT_NULL][0] for result in results])
+    # return sum([result[COUNT_NULL][0] for result in results])
+    return sum([result[COUNT_NULL] for result in results])
 
 def count_discrete(results):
     """ Count the occurences for each discrete value.
     """
     total_count = {}
     for result in results:
-        for count in result[COUNT_DISCRETE]:
-            if count[0] not in total_count:
-                total_count[count[0]] = 0
-            total_count[count[0]] += int(count[1])
+        for value, count in result[COUNT_DISCRETE].items():
+            if value  not in total_count:
+                total_count[value] = 0
+            total_count[value] += int(count)
     
     count_minimum = int(os.getenv(COUNT_MINIMUM) or COUNT_MINIMUM_DEFAULT)
     for key in total_count.keys():
@@ -96,7 +99,9 @@ def cohort_aggregator(results):
     """ Aggregate the number of individuals included in the cohort
         definition.
     """
-    count = {}
+    # count = {}
+    count = []
     for result in results:
-        count[result[0]] = result[1]
+        # count[result[0]] = result[1]
+        count.append(result)
     return count

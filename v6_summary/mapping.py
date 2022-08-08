@@ -19,7 +19,11 @@ FUNCTION_MAPPING = {
         FUNCTIONS: [COUNT_FUNCTION]
     },
     AVG_FUNCTION: {
-        FUNCTIONS: [SUM_FUNCTION, COUNT_FUNCTION]
+        FUNCTIONS: [COUNT_FUNCTION],
+        METHOD: {
+            NAME: SUM_FUNCTION,
+            CALL: sum_values,
+        },
     },
     MAX_FUNCTION: {
         FUNCTIONS: [MAX_FUNCTION]
@@ -37,7 +41,6 @@ FUNCTION_MAPPING = {
         METHOD: {
             NAME: HISTOGRAM,
             CALL: histogram,
-            FETCH: FETCH_ALL
         },
     },
     BOXPLOT: {
